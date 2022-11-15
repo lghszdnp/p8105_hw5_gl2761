@@ -69,3 +69,90 @@ clean_df %>%
 ```
 
 According to the result shown above, outcome values of patients in the experiment group have an obvious trend of increase, while the trend in control patients seems to continue to vibrate in a certain range. On average, patients in the experiment group have a better outcome than patients in the control group.
+
+## Problem 2
+
+Read in and clean data
+
+```{r}
+homicide_df =
+  read.csv("./data_WP/homicide-data.csv", na = c("", "Unknown")) %>% 
+  mutate(
+    city_state = str_c(city, ', ', state),
+    resolved = case_when(
+           disposition =="Closed without arrest" ~ "unsolved",
+           disposition =="Open/No arrest" ~"unsolved",
+           disposition =="Closed by arrest" ~ "solved"
+         )) %>% 
+  relocate(city_state)
+```
+
+Do summary by the following code
+
+```{r}
+city_summary = 
+  homicide_df %>%
+  group_by(city) %>%
+  summarize(
+    unsolved = sum(resolved == "unsolved"),
+    solved = sum(resolved == "solved"),
+    total = n()
+    )
+
+city_summary
+```
+
+For Baltimore, MD.
+```{r}
+baltimore_df = 
+  homicide_df %>% 
+  filter(city_state == "Baltimore, MD")
+
+baltimore_summary = 
+  baltimore_df %>% 
+  summarize(
+    unsolved = sum(resolved == "unsolved"),
+    n = n()
+  )
+
+baltimore_test = 
+  prop.test(
+  x = baltimore_summary %>% pull(unsolved),
+  n = baltimore_summary %>% pull(n)
+)
+
+baltimore_test %>% 
+  broom::tidy()
+```
+
+Another way of iteration
+
+```{r}
+city_df = 
+homicide_df %>% 
+  group_by(city_state) %>% 
+  summarize(
+    unsolved = sum(resolved == "unsolved"),
+    n = n()
+  ) %>% 
+  mutate(
+    test_results = map2(unsolved, n, prop.test),
+    tidy_results = map(test_results, broom::tidy)
+  ) %>% 
+  select(city_state, tidy_results) %>% 
+  unnest(tidy_results) %>% 
+  select(city_state, estimate, starts_with("conf"))
+
+city_df
+```
+
+Make a plot
+
+```{r}
+city_df %>% 
+  mutate(city_state = fct_reorder(city_state, estimate)) %>% 
+  ggplot(aes(x = city_state, y = estimate)) + 
+  geom_point() +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
