@@ -226,7 +226,7 @@ sim_results_df %>%
 
 ```{r}
 sim_results_df %>%
-  filter(rej=='reject') %>%
+  filter(rej_status=='reject') %>%
   group_by(mu) %>%
   summarise_at(vars(mu_hat), list(sample_mean = mean)) %>%
     ggplot(aes(x = as.factor(mu), y = sample_mean)) + 
