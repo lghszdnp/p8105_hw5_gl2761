@@ -207,7 +207,7 @@ sim_results_df =
 Make a proportion plot
 
 ```{r}
-ggplot(sim_results_df,aes(x = as.factor(mu),fill = rej)) + 
+ggplot(sim_results_df,aes(x = as.factor(mu), fill = rej_status)) + 
   geom_bar(position = "fill") +
   xlab("True mu") + 
   ylab("Proportion")
